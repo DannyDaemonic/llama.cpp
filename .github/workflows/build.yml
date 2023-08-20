@@ -191,13 +191,29 @@ jobs:
           cd build
           ctest -C Release --verbose
 
-      - name: Determine tag name
-        id: tag
-        shell: ${{ runner.os == 'Windows' ? 'pwsh' : 'bash' }}
+      - name: Determine tag name on Linux/macOS
+        if: runner.os != 'Windows'
+        id: tag-unix
         run: |
+          BRANCH_NAME="${{ env.BRANCH_NAME }}"
           BUILD_NUMBER="$(git rev-list --count HEAD)"
-          TAG_NAME=${{ github.ref == 'refs/heads/master' ? "$BUILD_NUMBER" : "${{ github.ref_name }}-$BUILD_NUMBER" }}
-          echo "::set-output name=name::$TAG_NAME"
+          if [[ "$BRANCH_NAME" == "master" ]]; then
+            echo "::set-output name=name::$BUILD_NUMBER"
+          else
+            echo "::set-output name=name::$BRANCH_NAME-$BUILD_NUMBER"
+          fi
+
+      - name: Determine tag name on Windows
+        if: runner.os == 'Windows'
+        id: tag-windows
+        shell: pwsh
+        run: |
+          $BUILD_NUMBER = (git rev-list --count HEAD)
+          if ("${{ env.BRANCH_NAME }}" -eq "master") {
+            echo "::set-output name=tag::$BUILD_NUMBER"
+          } else {
+            echo "::set-output name=tag::${{ env.BRANCH_NAME }}-$BUILD_NUMBER"
+          }
 
       - name: Pack artifacts
         id: pack_artifacts
@@ -230,12 +246,15 @@ jobs:
         uses: actions/download-artifact@v3
 
       - name: Determine tag name
-        id: tag
-        shell: ${{ runner.os == 'Windows' ? 'pwsh' : 'bash' }}
+        id: tag_name
         run: |
+          BRANCH_NAME="${{ env.BRANCH_NAME }}"
           BUILD_NUMBER="$(git rev-list --count HEAD)"
-          TAG_NAME=${{ github.ref == 'refs/heads/master' ? "$BUILD_NUMBER" : "${{ github.ref_name }}-$BUILD_NUMBER" }}
-          echo "::set-output name=name::$TAG_NAME"
+          if [[ "$BRANCH_NAME" == "master" ]]; then
+            echo "::set-output name=tag::$BUILD_NUMBER"
+          else
+            echo "::set-output name=tag::$BRANCH_NAME-$BUILD_NUMBER"
+          fi
 
       - name: Create release
         id: create_release
