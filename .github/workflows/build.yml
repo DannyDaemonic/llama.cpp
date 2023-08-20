@@ -301,14 +301,14 @@ jobs:
         if: ${{ ( github.event_name == 'push' && github.ref == 'refs/heads/master' ) || github.event.inputs.create_release == 'true' }}
         run: |
           Copy-Item LICENSE .\build\bin\Release\llama.cpp.txt
-          7z a llama-${{ env.BRANCH_NAME }}-${{ steps.commit.outputs.short }}-bin-win-${{ matrix.build }}-x64.zip .\build\bin\Release\*
+          7z a llama-${{ steps.build_number.outputs.count }}-bin-win-${{ matrix.build }}-x64.zip .\build\bin\Release\*
 
       - name: Upload artifacts
         if: ${{ ( github.event_name == 'push' && github.ref == 'refs/heads/master' ) || github.event.inputs.create_release == 'true' }}
         uses: actions/upload-artifact@v3
         with:
           path: |
-            llama-${{ env.BRANCH_NAME }}-${{ steps.commit.outputs.short }}-bin-win-${{ matrix.build }}-x64.zip
+            llama-${{ steps.build_number.outputs.count }}-bin-win-${{ matrix.build }}-x64.zip
 
   windows-latest-cmake-cublas:
     runs-on: windows-latest
@@ -347,14 +347,14 @@ jobs:
         id: pack_artifacts
         if: ${{ ( github.event_name == 'push' && github.ref == 'refs/heads/master' ) || github.event.inputs.create_release == 'true' }}
         run: |
-          7z a llama-${{ env.BRANCH_NAME }}-${{ steps.commit.outputs.short }}-bin-win-${{ matrix.build }}-cu${{ matrix.cuda }}-x64.zip .\build\bin\Release\*
+          7z a llama-${{ steps.build_number.outputs.count }}-bin-win-${{ matrix.build }}-cu${{ matrix.cuda }}-x64.zip .\build\bin\Release\*
 
       - name: Upload artifacts
         if: ${{ ( github.event_name == 'push' && github.ref == 'refs/heads/master' ) || github.event.inputs.create_release == 'true' }}
         uses: actions/upload-artifact@v3
         with:
           path: |
-            llama-${{ env.BRANCH_NAME }}-${{ steps.commit.outputs.short }}-bin-win-${{ matrix.build }}-cu${{ matrix.cuda }}-x64.zip
+            llama-${{ steps.build_number.outputs.count }}-bin-win-${{ matrix.build }}-cu${{ matrix.cuda }}-x64.zip
 
       - name: Copy and pack Cuda runtime
         if: ${{ matrix.cuda == '12.1.0' }}
@@ -404,17 +404,19 @@ jobs:
         id: download-artifact
         uses: actions/download-artifact@v3
 
-      - name: Get commit hash
-        id: commit
-        uses: pr-mpt/actions-commit-hash@v2
+      # Step to get the build number
+      - name: Get build number
+        id: build_number
+        run: echo "::set-output name=count::$(git rev-list --count HEAD)"
 
+      # Step to create the release using the build number
       - name: Create release
         id: create_release
         uses: anzz1/action-create-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: ${{ env.BRANCH_NAME }}-${{ steps.commit.outputs.short }}
+          tag_name: ${{ steps.build_number.outputs.count }}
 
       - name: Upload release
         id: upload_release
