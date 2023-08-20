@@ -228,6 +228,10 @@ jobs:
       - windows-latest-cmake
 
     steps:
+      - name: Clone
+        id: checkout
+        uses: actions/checkout@v1
+
       - name: Download artifacts
         id: download-artifact
         uses: actions/download-artifact@v3
