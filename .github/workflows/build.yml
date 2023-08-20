@@ -191,16 +191,22 @@ jobs:
           cd build
           ctest -C Release --verbose
 
-      - name: Get commit hash
-        id: commit
-        if: ${{ ( github.event_name == 'push' && github.ref == 'refs/heads/master' ) || github.event.inputs.create_release == 'true' }}
-        uses: pr-mpt/actions-commit-hash@v2
+      - name: Determine tag name
+        id: tag_name
+        run: |
+          BRANCH_NAME="${{ env.BRANCH_NAME }}"
+          BUILD_NUMBER="$(git rev-list --count HEAD)"
+          if [[ "$BRANCH_NAME" == "master" ]]; then
+            echo "::set-output name=tag::$BUILD_NUMBER"
+          else
+            echo "::set-output name=tag::$BRANCH_NAME-$BUILD_NUMBER"
+          fi
 
       - name: Pack artifacts
         id: pack_artifacts
         if: ${{ ( github.event_name == 'push' && github.ref == 'refs/heads/master' ) || github.event.inputs.create_release == 'true' }}
         run: |
-          7z a llama-${{ env.BRANCH_NAME }}-${{ steps.commit.outputs.short }}-bin-win-${{ matrix.build }}-x64.zip .\build\bin\Release\*
+          7z a llama-${{ env.BRANCH_NAME }}-${{ steps.tag_name.outputs.name }}-bin-win-${{ matrix.build }}-x64.zip .\build\bin\Release\*
 
       - name: Upload artifacts
         if: ${{ ( github.event_name == 'push' && github.ref == 'refs/heads/master' ) || github.event.inputs.create_release == 'true' }}
