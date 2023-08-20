@@ -191,9 +191,9 @@ jobs:
           cd build
           ctest -C Release --verbose
 
-      - name: Determine tag name on Linux/macOS
-        if: runner.os != 'Windows'
-        id: tag-unix
+      - name: Determine tag name
+        id: tag
+        shell: bash
         run: |
           BUILD_NUMBER="$(git rev-list --count HEAD)"
           if [[ "${{ env.BRANCH_NAME }}" == "master" ]]; then
@@ -201,17 +201,6 @@ jobs:
           else
             echo "::set-output name=tag::${{ env.BRANCH_NAME }}-$BUILD_NUMBER"
           fi
-
-      - name: Determine tag name on Windows
-        if: runner.os == 'Windows'
-        id: tag-windows
-        run: |
-          $BUILD_NUMBER = (git rev-list --count HEAD)
-          if ("${{ env.BRANCH_NAME }}" -eq "master") {
-            echo "::set-output name=tag::$BUILD_NUMBER"
-          } else {
-            echo "::set-output name=tag::${{ env.BRANCH_NAME }}-$BUILD_NUMBER"
-          }
 
       - name: Pack artifacts
         id: pack_artifacts
@@ -244,7 +233,8 @@ jobs:
         uses: actions/download-artifact@v3
 
       - name: Determine tag name
-        id: tag_name
+        id: tag
+        shell: bash
         run: |
           BUILD_NUMBER="$(git rev-list --count HEAD)"
           if [[ "${{ env.BRANCH_NAME }}" == "master" ]]; then
