@@ -226,9 +226,16 @@ jobs:
         id: download-artifact
         uses: actions/download-artifact@v3
 
-      - name: Get commit hash
-        id: commit
-        uses: pr-mpt/actions-commit-hash@v2
+      - name: Determine tag name
+        id: tag_name
+        run: |
+          BRANCH_NAME="${{ env.BRANCH_NAME }}"
+          BUILD_NUMBER="$(git rev-list --count HEAD)"
+          if [[ "$BRANCH_NAME" == "master" ]]; then
+            echo "::set-output name=tag::$BUILD_NUMBER"
+          else
+            echo "::set-output name=tag::$BRANCH_NAME-$BUILD_NUMBER"
+          fi
 
       - name: Create release
         id: create_release
@@ -236,7 +243,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: ${{ env.BRANCH_NAME }}-${{ steps.commit.outputs.short }}
+          tag_name: ${{ steps.tag_name.outputs.tag }}
 
       - name: Upload release
         id: upload_release
