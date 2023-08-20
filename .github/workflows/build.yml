@@ -301,14 +301,14 @@ jobs:
         if: ${{ ( github.event_name == 'push' && github.ref == 'refs/heads/master' ) || github.event.inputs.create_release == 'true' }}
         run: |
           Copy-Item LICENSE .\build\bin\Release\llama.cpp.txt
-          7z a llama-${{ steps.build_number.outputs.count }}-bin-win-${{ matrix.build }}-x64.zip .\build\bin\Release\*
+          7z a llama-${{ steps.tag_name.outputs.tag }}-bin-win-${{ matrix.build }}-x64.zip .\build\bin\Release\*
 
       - name: Upload artifacts
         if: ${{ ( github.event_name == 'push' && github.ref == 'refs/heads/master' ) || github.event.inputs.create_release == 'true' }}
         uses: actions/upload-artifact@v3
         with:
           path: |
-            llama-${{ steps.build_number.outputs.count }}-bin-win-${{ matrix.build }}-x64.zip
+            llama-${{ steps.tag_name.outputs.tag }}-bin-win-${{ matrix.build }}-x64.zip
 
   windows-latest-cmake-cublas:
     runs-on: windows-latest
@@ -347,14 +347,14 @@ jobs:
         id: pack_artifacts
         if: ${{ ( github.event_name == 'push' && github.ref == 'refs/heads/master' ) || github.event.inputs.create_release == 'true' }}
         run: |
-          7z a llama-${{ steps.build_number.outputs.count }}-bin-win-${{ matrix.build }}-cu${{ matrix.cuda }}-x64.zip .\build\bin\Release\*
+          7z a llama-${{ steps.tag_name.outputs.tag }}-bin-win-${{ matrix.build }}-cu${{ matrix.cuda }}-x64.zip .\build\bin\Release\*
 
       - name: Upload artifacts
         if: ${{ ( github.event_name == 'push' && github.ref == 'refs/heads/master' ) || github.event.inputs.create_release == 'true' }}
         uses: actions/upload-artifact@v3
         with:
           path: |
-            llama-${{ steps.build_number.outputs.count }}-bin-win-${{ matrix.build }}-cu${{ matrix.cuda }}-x64.zip
+            llama-${{ steps.tag_name.outputs.tag }}-bin-win-${{ matrix.build }}-cu${{ matrix.cuda }}-x64.zip
 
       - name: Copy and pack Cuda runtime
         if: ${{ matrix.cuda == '12.1.0' }}
@@ -404,19 +404,24 @@ jobs:
         id: download-artifact
         uses: actions/download-artifact@v3
 
-      # Step to get the build number
-      - name: Get build number
-        id: build_number
-        run: echo "::set-output name=count::$(git rev-list --count HEAD)"
+      - name: Determine tag name
+        id: tag_name
+        run: |
+          BRANCH_NAME="${{ env.BRANCH_NAME }}"
+          BUILD_NUMBER="$(git rev-list --count HEAD)"
+          if [[ "$BRANCH_NAME" == "master" ]]; then
+            echo "::set-output name=tag::$BUILD_NUMBER"
+          else
+            echo "::set-output name=tag::$BRANCH_NAME-$BUILD_NUMBER"
+          fi
 
-      # Step to create the release using the build number
       - name: Create release
         id: create_release
         uses: anzz1/action-create-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: ${{ steps.build_number.outputs.count }}
+          tag_name: ${{ steps.tag_name.outputs.tag }}
 
       - name: Upload release
         id: upload_release
