@@ -210,7 +210,7 @@ jobs:
             llama-${{ env.BRANCH_NAME }}-${{ steps.commit.outputs.short }}-bin-win-${{ matrix.build }}-x64.zip
 
   release:
-    if: always
+    if: always()
 
     runs-on: ubuntu-latest
 
