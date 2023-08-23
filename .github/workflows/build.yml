@@ -206,7 +206,7 @@ jobs:
         id: pack_artifacts
         if: ${{ ( github.event_name == 'push' && github.ref == 'refs/heads/master' ) || github.event.inputs.create_release == 'true' }}
         run: |
-          7z a llama-${{ env.BRANCH_NAME }}-${{ steps.tag_name.outputs.tag }}-bin-win-${{ matrix.build }}-x64.zip .\build\bin\Release\*
+          7z a llama-${{ env.BRANCH_NAME }}-${{ steps.tag.outputs.name }}-bin-win-${{ matrix.build }}-x64.zip .\build\bin\Release\*
 
       - name: Upload artifacts
         if: ${{ ( github.event_name == 'push' && github.ref == 'refs/heads/master' ) || github.event.inputs.create_release == 'true' }}
@@ -253,7 +253,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: ${{ steps.tag_name.outputs.tag }}
+          tag_name: ${{ steps.tag.outputs.name }}
 
       - name: Upload release
         id: upload_release
